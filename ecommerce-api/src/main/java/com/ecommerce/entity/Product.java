@@ -2,6 +2,7 @@ package com.ecommerce.entity;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import com.ecommerce.entity.Category;
 
 @Entity
 public class Product {
@@ -38,4 +39,13 @@ public class Product {
     public Integer getStock() { return stock; }
 
     public void setStock(Integer stock) { this.stock = stock; }
+
+    @ManyToOne
+    @JoinColumn(name = "category_id")
+    private Category category;
+
+    public Category getCategory() { return category; }
+    public void setCategory(Category category) { this.category = category; }
 }
+
+
