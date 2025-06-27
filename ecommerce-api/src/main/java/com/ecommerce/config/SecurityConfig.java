@@ -24,9 +24,11 @@ import jakarta.servlet.http.*;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Collections;
 
 @Configuration
 public class SecurityConfig {
+
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtService jwtService, UserRepository userRepo) throws Exception {
@@ -34,6 +36,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/",
+                                "/api/auth/**",
                                 "/auth/**",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
@@ -68,17 +71,24 @@ public class SecurityConfig {
         }
 
         @Override
-        protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
-                throws ServletException, IOException {
+        protected void doFilterInternal(HttpServletRequest request,
+                                        HttpServletResponse response,
+                                        FilterChain chain) throws ServletException, IOException {
             String authHeader = request.getHeader("Authorization");
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 String token = authHeader.substring(7);
                 if (jwtService.isTokenValid(token)) {
                     String username = jwtService.extractUsername(token);
-                    User user = userRepo.findByUsername(username).orElse(null);
+                    User user = userRepo.findByEmail(username).orElse(null);
                     if (user != null) {
-                        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                                user.getUsername(), null, user.getRoles().stream().map(r -> new SimpleGrantedAuthority("ROLE_" + r)).toList());
+                        UsernamePasswordAuthenticationToken auth =
+                                new UsernamePasswordAuthenticationToken(
+                                        user.getEmail(),
+                                        null,
+                                        Collections.singletonList(
+                                                new SimpleGrantedAuthority(user.getRole())
+                                        )
+                                );
                         SecurityContextHolder.getContext().setAuthentication(auth);
                     }
                 }

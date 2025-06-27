@@ -10,12 +10,17 @@ public class Product {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @jakarta.validation.constraints.NotBlank
     private String name;
 
     private String description;
 
+    @jakarta.validation.constraints.NotNull
+    @jakarta.validation.constraints.Positive
     private BigDecimal price;
 
+    @jakarta.validation.constraints.NotNull
+    @jakarta.validation.constraints.Min(0)
     private Integer stock;
 
     // Getters e Setters

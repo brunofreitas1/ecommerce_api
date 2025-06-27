@@ -14,8 +14,11 @@ public class Order {
 
     private LocalDateTime orderDate;
 
+    @jakarta.validation.constraints.NotNull
+    @jakarta.validation.constraints.Min(0)
     private BigDecimal total;
 
+    @jakarta.validation.constraints.NotBlank
     private String status;
 
     @ManyToOne

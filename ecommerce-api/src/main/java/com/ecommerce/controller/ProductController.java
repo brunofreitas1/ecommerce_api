@@ -1,51 +1,94 @@
 package com.ecommerce.controller;
 
+import com.ecommerce.dto.ProductDTO;
+import com.ecommerce.entity.Category;
 import com.ecommerce.entity.Product;
-import com.ecommerce.service.ProductService;
-import org.springframework.http.ResponseEntity;
+import com.ecommerce.repository.CategoryRepository;
+import com.ecommerce.repository.ProductRepository;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
 
-    private final ProductService service;
+    @Autowired
+    private ProductRepository productRepository;
 
-    public ProductController(ProductService service) {
-        this.service = service;
-    }
+    @Autowired
+    private CategoryRepository categoryRepository;
 
     @GetMapping
-    public List<Product> getAll() {
-        return service.getAll();
+    public List<ProductDTO> listAll() {
+        return productRepository.findAll().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Product> getById(@PathVariable Long id) {
-        return service.getById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ProductDTO findById(@PathVariable Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Produto não encontrado"));
+        return convertToDTO(product);
     }
 
     @PostMapping
-    public Product create(@RequestBody Product product) {
-        return service.create(product);
+    public ProductDTO create(@Valid @RequestBody ProductDTO dto) {
+        Product product = new Product();
+        product.setName(dto.getName());
+        product.setDescription(dto.getDescription());
+        product.setPrice(dto.getPrice());
+        product.setStock(dto.getStock());
+
+        if (dto.getCategoryId() != null) {
+            Category category = categoryRepository.findById(dto.getCategoryId())
+                    .orElseThrow(() -> new RuntimeException("Categoria não encontrada"));
+            product.setCategory(category);
+        }
+
+        Product saved = productRepository.save(product);
+        return convertToDTO(saved);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Product> update(@PathVariable Long id, @RequestBody Product product) {
-        try {
-            return ResponseEntity.ok(service.update(id, product));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+    public ProductDTO update(@PathVariable Long id, @Valid @RequestBody ProductDTO dto) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Produto não encontrado"));
+
+        product.setName(dto.getName());
+        product.setDescription(dto.getDescription());
+        product.setPrice(dto.getPrice());
+        product.setStock(dto.getStock());
+
+        if (dto.getCategoryId() != null) {
+            Category category = categoryRepository.findById(dto.getCategoryId())
+                    .orElseThrow(() -> new RuntimeException("Categoria não encontrada"));
+            product.setCategory(category);
+        } else {
+            product.setCategory(null);
         }
+
+        Product saved = productRepository.save(product);
+        return convertToDTO(saved);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        service.delete(id);
-        return ResponseEntity.noContent().build();
+    public void delete(@PathVariable Long id) {
+        productRepository.deleteById(id);
+    }
+
+    private ProductDTO convertToDTO(Product product) {
+        ProductDTO dto = new ProductDTO();
+        dto.setId(product.getId());
+        dto.setName(product.getName());
+        dto.setDescription(product.getDescription());
+        dto.setPrice(product.getPrice());
+        dto.setStock(product.getStock());
+        dto.setCategoryId(product.getCategory() != null ? product.getCategory().getId() : null);
+        return dto;
     }
 }

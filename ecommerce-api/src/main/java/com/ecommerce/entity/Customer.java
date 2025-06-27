@@ -9,11 +9,15 @@ public class Customer {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @jakarta.validation.constraints.NotBlank
     private String name;
 
+    @jakarta.validation.constraints.NotBlank
+    @jakarta.validation.constraints.Email
     @Column(unique = true)
     private String email;
 
+    @jakarta.validation.constraints.NotBlank
     private String password;
 
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL)

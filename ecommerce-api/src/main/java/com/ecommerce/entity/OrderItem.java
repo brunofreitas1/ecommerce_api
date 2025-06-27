@@ -17,8 +17,12 @@ public class OrderItem {
     @JoinColumn(name = "product_id")
     private Product product;
 
+    @jakarta.validation.constraints.NotNull
+    @jakarta.validation.constraints.Min(1)
     private Integer quantity;
 
+    @jakarta.validation.constraints.NotNull
+    @jakarta.validation.constraints.Positive
     private BigDecimal unitPrice;
 
     // Getters e Setters
