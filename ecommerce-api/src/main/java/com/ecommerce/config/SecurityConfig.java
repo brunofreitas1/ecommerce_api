@@ -1,6 +1,7 @@
 package com.ecommerce.config;
 
 import com.ecommerce.security.JwtService;
+import com.ecommerce.security.JwtAuthFilter;
 import com.ecommerce.repository.UserRepository;
 import com.ecommerce.entity.User;
 import org.springframework.context.annotation.Bean;
@@ -32,17 +33,20 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtService jwtService, UserRepository userRepo) throws Exception {
-        http.csrf(AbstractHttpConfigurer::disable)
+        http
+                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/",
                                 "/api/auth/**",
                                 "/auth/**",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
-                                "/v3/api-docs/**",
                                 "/v3/api-docs",
-                                "/webjars/**"
+                                "/v3/api-docs/**",
+                                "/v3/api-docs.yaml",
+                                "/v3/api-docs/swagger-config",
+                                "/webjars/**",
+                                "/swagger-resources/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
@@ -61,39 +65,4 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    public static class JwtAuthFilter extends OncePerRequestFilter {
-        private final JwtService jwtService;
-        private final UserRepository userRepo;
-
-        public JwtAuthFilter(JwtService jwtService, UserRepository userRepo) {
-            this.jwtService = jwtService;
-            this.userRepo = userRepo;
-        }
-
-        @Override
-        protected void doFilterInternal(HttpServletRequest request,
-                                        HttpServletResponse response,
-                                        FilterChain chain) throws ServletException, IOException {
-            String authHeader = request.getHeader("Authorization");
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                String token = authHeader.substring(7);
-                if (jwtService.isTokenValid(token)) {
-                    String username = jwtService.extractUsername(token);
-                    User user = userRepo.findByEmail(username).orElse(null);
-                    if (user != null) {
-                        UsernamePasswordAuthenticationToken auth =
-                                new UsernamePasswordAuthenticationToken(
-                                        user.getEmail(),
-                                        null,
-                                        Collections.singletonList(
-                                                new SimpleGrantedAuthority(user.getRole())
-                                        )
-                                );
-                        SecurityContextHolder.getContext().setAuthentication(auth);
-                    }
-                }
-            }
-            chain.doFilter(request, response);
-        }
-    }
 }
