@@ -27,20 +27,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         this.userRepository = userRepository;
     }
 
-    @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) {
-        String path = request.getRequestURI();
-
-        return path.startsWith("/v3/api-docs")
-                || path.equals("/v3/api-docs")
-                || path.equals("/v3/api-docs.yaml")
-                || path.equals("/v3/api-docs/swagger-config")
-                || path.startsWith("/swagger-ui")
-                || path.equals("/swagger-ui.html")
-                || path.startsWith("/webjars/")
-                || path.startsWith("/swagger-resources")
-                || path.startsWith("/api/auth");
-    }
+    // O método shouldNotFilter foi removido
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
