@@ -15,7 +15,11 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(List.of("*"));
+        // AQUI ESTÁ A CORREÇÃO:
+        // Em vez de usar "*", especificamos a URL exata do nosso frontend.
+        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
+
+        // O resto da configuração permanece igual.
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
