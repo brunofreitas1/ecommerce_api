@@ -1,67 +1,105 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+    Typography,
+    Button,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Paper,
+    CircularProgress
+} from '@mui/material';
 import api from '../api';
 
-function Cart() {
-    const [order, setOrder] = useState(null);
+function CartPage({ showSnackbar }) {
+    const [cart, setCart] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
 
-    const cart = JSON.parse(localStorage.getItem('cart')) || [];
-
-    const checkout = () => {
-        const payload = {
-            items: cart.map(item => ({
-                productId: item.id,
-                quantity: item.quantity
-            }))
-        };
-
-        api.post('/api/checkout', payload)
-            .then(res => {
-                setOrder(res.data);
-                localStorage.removeItem('cart');
-            })
-            .catch(err => console.error(err));
+    const fetchCart = async () => {
+        try {
+            const response = await api.get('/api/cart');
+            setCart(response.data);
+        } catch (error) {
+            console.error("Erro ao buscar o carrinho:", error);
+            showSnackbar('Você precisa estar logado para ver o carrinho.', 'error');
+            navigate('/login');
+        } finally {
+            setLoading(false);
+        }
     };
 
-    if (order) {
-        return (
-            <div className="mt-4">
-                <h2>Pedido Finalizado!</h2>
-                <p><strong>Pedido ID:</strong> {order.id}</p>
-                <p><strong>Status:</strong> {order.status}</p>
-                <p><strong>Total:</strong> R$ {order.total.toFixed(2)}</p>
+    useEffect(() => {
+        fetchCart();
+    }, []);
 
-                <h4>Itens:</h4>
-                <ul>
-                    {order.items.map(item => (
-                        <li key={item.productId}>
-                            {item.name} - {item.quantity} x R$ {item.price.toFixed(2)}
-                        </li>
-                    ))}
-                </ul>
-            </div>
-        );
+    const handleCheckout = async () => {
+        try {
+            await api.post('/api/cart/checkout');
+            fetchCart();
+            showSnackbar('Compra finalizada com sucesso!', 'success');
+        } catch (error) {
+            console.error("Erro ao finalizar a compra:", error);
+            showSnackbar('Erro ao finalizar a compra. Verifique o console.', 'error');
+        }
+    };
+
+    if (loading) {
+        return <CircularProgress />;
     }
 
     return (
-        <div className="mt-4">
-            <h2>Carrinho</h2>
-            {cart.length === 0 && <p>Seu carrinho está vazio.</p>}
-            {cart.length > 0 && (
+        <>
+            <Typography variant="h4" gutterBottom sx={{ mt: 4 }}>
+                Carrinho de Compras
+            </Typography>
+
+            {cart && cart.items?.length > 0 ? (
                 <>
-                    <ul>
-                        {cart.map(item => (
-                            <li key={item.id}>
-                                {item.name} - {item.quantity} x R$ {item.price.toFixed(2)}
-                            </li>
-                        ))}
-                    </ul>
-                    <button className="btn btn-success" onClick={checkout}>
+                    <TableContainer component={Paper}>
+                        <Table>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>Produto</TableCell>
+                                    <TableCell>Quantidade</TableCell>
+                                    <TableCell align="right">Preço Unitário</TableCell>
+                                    <TableCell align="right">Subtotal</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {cart.items.map((item) => (
+                                    <TableRow key={item.productId}>
+                                        <TableCell>{item.name}</TableCell>
+                                        <TableCell>{item.quantity}</TableCell>
+                                        <TableCell align="right">R$ {Number(item.price).toFixed(2)}</TableCell>
+                                        <TableCell align="right">R$ {Number(item.total).toFixed(2)}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+
+                    <Typography variant="h6" sx={{ mt: 2, textAlign: 'right' }}>
+                        Total: R$ {Number(cart.total).toFixed(2)}
+                    </Typography>
+
+                    <Button
+                        variant="contained"
+                        color="success"
+                        sx={{ mt: 2 }}
+                        onClick={handleCheckout}
+                    >
                         Finalizar Compra
-                    </button>
+                    </Button>
                 </>
+            ) : (
+                <Typography>Seu carrinho está vazio.</Typography>
             )}
-        </div>
+        </>
     );
 }
 
-export default Cart;
+export default CartPage;
