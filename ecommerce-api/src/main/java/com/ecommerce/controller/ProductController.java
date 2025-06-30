@@ -7,8 +7,12 @@ import com.ecommerce.repository.CategoryRepository;
 import com.ecommerce.repository.ProductRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,6 +38,23 @@ public class ProductController {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Produto não encontrado"));
         return convertToDTO(product);
+    }
+
+    @PostMapping("/{id}/image")
+    public ResponseEntity<ProductDTO> uploadProductImage(@PathVariable Long id,
+                                                         @RequestParam("file") MultipartFile file) throws IOException {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Produto não encontrado"));
+
+        if (!file.getContentType().startsWith("image/")) {
+            throw new RuntimeException("Somente arquivos de imagem são permitidos.");
+        }
+
+        product.setImageData(file.getBytes());
+        productRepository.save(product);
+
+        ProductDTO dto = convertToDTO(product);
+        return ResponseEntity.ok(dto);
     }
 
     @PostMapping
@@ -89,6 +110,9 @@ public class ProductController {
         dto.setPrice(product.getPrice());
         dto.setStock(product.getStock());
         dto.setCategoryId(product.getCategory() != null ? product.getCategory().getId() : null);
+        if (product.getImageData() != null) {
+            dto.setImageBase64(Base64.getEncoder().encodeToString(product.getImageData()));
+        }
         return dto;
     }
 }

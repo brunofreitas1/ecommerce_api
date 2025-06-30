@@ -10,6 +10,7 @@ public class ProductDTO {
     private BigDecimal price;
     private Integer stock;
     private Long categoryId;
+    private String imageBase64;
 
     // Getters e Setters
 
@@ -59,5 +60,13 @@ public class ProductDTO {
 
     public void setCategoryId(Long categoryId) {
         this.categoryId = categoryId;
+    }
+
+    public String getImageBase64() {
+        return imageBase64;
+    }
+
+    public void setImageBase64(String imageBase64) {
+        this.imageBase64 = imageBase64;
     }
 }

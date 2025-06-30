@@ -23,6 +23,10 @@ public class Product {
     @jakarta.validation.constraints.Min(0)
     private Integer stock;
 
+    @Lob
+    @Column(name = "image_data")
+    private byte[] imageData;
+
     // Getters e Setters
 
     public Long getId() { return id; }
@@ -44,6 +48,10 @@ public class Product {
     public Integer getStock() { return stock; }
 
     public void setStock(Integer stock) { this.stock = stock; }
+
+    public byte[] getImageData() { return imageData; }
+
+    public void setImageData(byte[] imageData) { this.imageData = imageData; }
 
     @ManyToOne
     @JoinColumn(name = "category_id")
