@@ -30,6 +30,18 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
+    public List<ProductDTO> searchProductsByName(String name) {
+        return productRepository.findByNameContainingIgnoreCase(name).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<ProductDTO> getProductsByCategory(Long categoryId) {
+        return productRepository.findByCategoryId(categoryId).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
     @Transactional(readOnly = true) // Boa prática para operações de leitura
     public ProductDTO getProductById(Long id) {
         Product product = productRepository.findById(id)

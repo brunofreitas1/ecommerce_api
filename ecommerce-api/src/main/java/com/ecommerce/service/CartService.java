@@ -62,6 +62,28 @@ public class CartService {
         return dto;
     }
 
+    public CartDTO updateProductQuantity(Long productId, Integer quantity) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Produto não encontrado."));
+
+        if (quantity <= 0) {
+            return removeProduct(productId);
+        }
+
+        Optional<CartItemDTO> optional = cartItems.stream()
+                .filter(item -> item.getProductId().equals(productId))
+                .findFirst();
+
+        if (optional.isPresent()) {
+            CartItemDTO existing = optional.get();
+            existing.setQuantity(quantity);
+            existing.setTotal(product.getPrice().multiply(BigDecimal.valueOf(quantity)));
+        } else {
+        }
+
+        return getCart();
+    }
+
     public void clearCart() {
         cartItems.clear();
     }

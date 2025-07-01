@@ -8,6 +8,9 @@ import com.ecommerce.dto.OrderDTO;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.ecommerce.entity.User;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,6 +29,16 @@ public class OrderController {
     @GetMapping
     public List<OrderDTO> listAll() {
         return orderRepository.findAll().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping("/my-orders")
+    public List<OrderDTO> getMyOrders() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User user = (User) authentication.getPrincipal();
+
+        return orderRepository.findByCustomerId(user.getId()).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }

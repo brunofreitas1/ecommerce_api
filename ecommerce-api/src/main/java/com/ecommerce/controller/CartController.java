@@ -84,4 +84,10 @@ public class CartController {
 
         return ResponseEntity.ok("Pedido realizado com sucesso.");
     }
+
+    @PutMapping("/update/{productId}/{quantity}")
+    public ResponseEntity<CartDTO> updateCartItem(@PathVariable Long productId,
+                                                  @PathVariable Integer quantity) {
+        return ResponseEntity.ok(cartService.updateProductQuantity(productId, quantity));
+    }
 }

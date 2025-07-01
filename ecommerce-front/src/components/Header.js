@@ -52,7 +52,12 @@ function Header({ isAuthenticated, onLogout }) {
                 )}
 
                 {isAuthenticated ? (
-                    <Button color="inherit" onClick={onLogout}>Logout</Button>
+                    <>
+                        <Button color="inherit" component={Link} to="/order-history">
+                            Meus Pedidos
+                        </Button>
+                        <Button color="inherit" onClick={onLogout}>Logout</Button>
+                    </>
                 ) : (
                     <>
                         <Button color="inherit" component={Link} to="/login">Login</Button>

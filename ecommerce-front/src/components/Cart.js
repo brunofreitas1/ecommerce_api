@@ -10,8 +10,13 @@ import {
     TableHead,
     TableRow,
     Paper,
-    CircularProgress
+    CircularProgress,
+    IconButton,
+    TextField
 } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
+import DeleteIcon from '@mui/icons-material/Delete';
 import api from '../api';
 
 function CartPage({ showSnackbar }) {
@@ -35,6 +40,28 @@ function CartPage({ showSnackbar }) {
     useEffect(() => {
         fetchCart();
     }, []);
+
+    const handleUpdateQuantity = async (productId, quantity) => {
+        try {
+            await api.put(`/api/cart/update/${productId}/${quantity}`);
+            fetchCart();
+            showSnackbar('Quantidade atualizada!', 'success');
+        } catch (error) {
+            console.error("Erro ao atualizar a quantidade:", error);
+            showSnackbar('Erro ao atualizar a quantidade.', 'error');
+        }
+    };
+
+    const handleRemoveItem = async (productId) => {
+        try {
+            await api.delete(`/api/cart/remove/${productId}`);
+            fetchCart();
+            showSnackbar('Item removido do carrinho!', 'success');
+        } catch (error) {
+            console.error("Erro ao remover o item:", error);
+            showSnackbar('Erro ao remover o item.', 'error');
+        }
+    };
 
     const handleCheckout = async () => {
         try {
@@ -67,15 +94,36 @@ function CartPage({ showSnackbar }) {
                                     <TableCell>Quantidade</TableCell>
                                     <TableCell align="right">Preço Unitário</TableCell>
                                     <TableCell align="right">Subtotal</TableCell>
+                                    <TableCell align="right">Ações</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
                                 {cart.items.map((item) => (
                                     <TableRow key={item.productId}>
                                         <TableCell>{item.name}</TableCell>
-                                        <TableCell>{item.quantity}</TableCell>
+                                        <TableCell>
+                                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                                                <IconButton onClick={() => handleUpdateQuantity(item.productId, item.quantity - 1)} size="small">
+                                                    <RemoveIcon />
+                                                </IconButton>
+                                                <TextField
+                                                    value={item.quantity}
+                                                    size="small"
+                                                    style={{ width: '50px', textAlign: 'center' }}
+                                                    readOnly
+                                                />
+                                                <IconButton onClick={() => handleUpdateQuantity(item.productId, item.quantity + 1)} size="small">
+                                                    <AddIcon />
+                                                </IconButton>
+                                            </div>
+                                        </TableCell>
                                         <TableCell align="right">R$ {Number(item.price).toFixed(2)}</TableCell>
                                         <TableCell align="right">R$ {Number(item.total).toFixed(2)}</TableCell>
+                                        <TableCell align="right">
+                                            <IconButton onClick={() => handleRemoveItem(item.productId)} color="error">
+                                                <DeleteIcon />
+                                            </IconButton>
+                                        </TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>

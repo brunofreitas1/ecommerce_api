@@ -30,9 +30,16 @@ function ProductDetailPage({ showSnackbar }) {
         fetchProduct();
     }, [id, showSnackbar]);
 
-    const handleAddToCart = () => {
-        // Usamos a função recebida por props
-        showSnackbar(`${product.name} adicionado ao carrinho!`, 'success');
+    const handleAddToCart = async () => { // 1. Transforme a função em async
+        if (!product) return;
+
+        try {
+            await api.post(`/api/cart/add/${product.id}/1`); // Adiciona 1 unidade do produto
+            showSnackbar(`${product.name} adicionado ao carrinho!`, 'success');
+        } catch (error) {
+            console.error("Erro ao adicionar ao carrinho:", error);
+            showSnackbar('Erro ao adicionar o produto ao carrinho. Você está logado?', 'error');
+        }
     };
 
     if (loading) {

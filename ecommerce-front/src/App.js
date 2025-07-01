@@ -15,6 +15,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import ProductManager from './components/ProductManager';
 import CategoryManager from './components/CategoryManager';
 import ProductDetailPage from './components/ProductDetailPage';
+import OrderHistory from './components/OrderHistory';
 
 function AppContent() {
     const navigate = useNavigate();
@@ -46,6 +47,7 @@ function AppContent() {
                     <Route path="/" element={<ProductList showSnackbar={showSnackbar} />} />
                     <Route path="/products/:id" element={<ProductDetailPage showSnackbar={showSnackbar} />} />
                     <Route path="/cart" element={<CartPage showSnackbar={showSnackbar} />} />
+                    <Route path="/order-history" element={<ProtectedRoute><OrderHistory showSnackbar={showSnackbar} /></ProtectedRoute>} />
                     <Route path="/login" element={<Login onLoginSuccess={handleLoginSuccess} />} />
                     <Route path="/register" element={<Register />} />
 
