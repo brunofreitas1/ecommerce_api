@@ -1,16 +1,14 @@
-// src/components/ProductDetailPage.js
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Box, Typography, Button, CircularProgress, Card, CardMedia, CardContent, Grid, Paper } from '@mui/material';
 import api from '../api';
-// A importação do useSnackbar foi removida
+import { useCart } from '../context/CartContext'; // 1. IMPORTE O HOOK
 
-// O componente agora recebe showSnackbar como uma prop
 function ProductDetailPage({ showSnackbar }) {
     const { id } = useParams();
+    const { addToCart } = useCart(); // 2. PEGUE A FUNÇÃO DO CONTEXTO
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
-    // A chamada ao useSnackbar foi removida
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -20,7 +18,6 @@ function ProductDetailPage({ showSnackbar }) {
                 setProduct(response.data);
             } catch (error) {
                 console.error("Erro ao buscar detalhes do produto:", error);
-                // Usamos a função recebida por props
                 showSnackbar("Produto não encontrado.", "error");
             } finally {
                 setLoading(false);
@@ -30,18 +27,17 @@ function ProductDetailPage({ showSnackbar }) {
         fetchProduct();
     }, [id, showSnackbar]);
 
-    const handleAddToCart = async () => { // 1. Transforme a função em async
+    const handleAddToCart = async () => {
         if (!product) return;
-
         try {
-            await api.post(`/api/cart/add/${product.id}/1`); // Adiciona 1 unidade do produto
+            await addToCart(product.id, 1); // 3. USE A FUNÇÃO DO CONTEXTO
             showSnackbar(`${product.name} adicionado ao carrinho!`, 'success');
         } catch (error) {
-            console.error("Erro ao adicionar ao carrinho:", error);
-            showSnackbar('Erro ao adicionar o produto ao carrinho. Você está logado?', 'error');
+            showSnackbar('Erro ao adicionar o produto. Você está logado?', 'error');
         }
     };
 
+    // O resto do componente continua igual...
     if (loading) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
@@ -61,7 +57,6 @@ function ProductDetailPage({ showSnackbar }) {
         );
     }
 
-    // O resto do seu JSX para exibir o produto permanece igual...
     return (
         <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
             <Grid container spacing={4}>
@@ -87,7 +82,7 @@ function ProductDetailPage({ showSnackbar }) {
                             {product.description}
                         </Typography>
                         <Typography variant="h5" color="primary" sx={{ my: 2 }}>
-                            R$ {product.price.toFixed(2)}
+                            R$ {product.price ? product.price.toFixed(2) : '0.00'}
                         </Typography>
                         <Typography variant="body2" color={product.stock > 0 ? 'success.main' : 'error.main'}>
                             {product.stock > 0 ? `${product.stock} em estoque` : 'Fora de estoque'}

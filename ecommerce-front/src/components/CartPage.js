@@ -1,76 +1,48 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Typography,
-    Button,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    Paper,
-    CircularProgress,
-    IconButton,
-    TextField
+    Typography, Button, Table, TableBody, TableCell, TableContainer,
+    TableHead, TableRow, Paper, CircularProgress, IconButton, Box
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import RemoveIcon from '@mui/icons-material/Remove';
 import DeleteIcon from '@mui/icons-material/Delete';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import api from '../api';
+import { useCart } from '../context/CartContext';
 
 function CartPage({ showSnackbar }) {
-    const [cart, setCart] = useState(null);
-    const [loading, setLoading] = useState(true);
+    // Pegamos a nova função 'updateQuantity' do contexto
+    const { cart, loading, clearCart, updateQuantity } = useCart();
     const navigate = useNavigate();
 
-    const fetchCart = async () => {
+    const handleQuantityChange = async (productId, newQuantity) => {
         try {
-            const response = await api.get('/api/cart');
-            setCart(response.data);
+            await updateQuantity(productId, newQuantity);
+            // O snackbar de sucesso é opcional, pode poluir a tela.
+            // showSnackbar('Quantidade atualizada!', 'success');
         } catch (error) {
-            console.error("Erro ao buscar o carrinho:", error);
-            showSnackbar('Você precisa estar logado para ver o carrinho.', 'error');
-            navigate('/login');
-        } finally {
-            setLoading(false);
+            const errorMsg = error.response?.data?.message || 'Estoque insuficiente!';
+            showSnackbar(errorMsg, 'error');
         }
     };
 
-    useEffect(() => {
-        fetchCart();
-    }, []);
-
-    const handleUpdateQuantity = async (productId, quantity) => {
-        try {
-            await api.put(`/api/cart/update/${productId}/${quantity}`);
-            fetchCart();
-            showSnackbar('Quantidade atualizada!', 'success');
-        } catch (error) {
-            console.error("Erro ao atualizar a quantidade:", error);
-            showSnackbar('Erro ao atualizar a quantidade.', 'error');
-        }
-    };
-
+    // A função de remover o item inteiro continua aqui para o ícone de lixeira
     const handleRemoveItem = async (productId) => {
-        try {
-            await api.delete(`/api/cart/remove/${productId}`);
-            fetchCart();
-            showSnackbar('Item removido do carrinho!', 'success');
-        } catch (error) {
-            console.error("Erro ao remover o item:", error);
-            showSnackbar('Erro ao remover o item.', 'error');
-        }
+        // A lógica de remoção agora está dentro do 'updateQuantity' quando a quantidade é 0
+        await handleQuantityChange(productId, 0);
+        showSnackbar('Item removido do carrinho!', 'success');
     };
 
     const handleCheckout = async () => {
         try {
-            await api.post('/api/cart/checkout');
-            fetchCart();
-            showSnackbar('Compra finalizada com sucesso!', 'success');
+            const response = await api.post('/api/cart/checkout');
+            clearCart();
+            showSnackbar(response.data || 'Compra finalizada com sucesso!', 'success');
+            navigate('/order-history');
         } catch (error) {
             console.error("Erro ao finalizar a compra:", error);
-            showSnackbar('Erro ao finalizar a compra. Verifique o console.', 'error');
+            const errorMessage = error.response?.data || 'Erro ao finalizar a compra.';
+            showSnackbar(errorMessage, 'error');
         }
     };
 
@@ -91,35 +63,39 @@ function CartPage({ showSnackbar }) {
                             <TableHead>
                                 <TableRow>
                                     <TableCell>Produto</TableCell>
-                                    <TableCell>Quantidade</TableCell>
+                                    <TableCell align="center">Quantidade</TableCell>
                                     <TableCell align="right">Preço Unitário</TableCell>
                                     <TableCell align="right">Subtotal</TableCell>
-                                    <TableCell align="right">Ações</TableCell>
+                                    <TableCell align="center">Remover</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
                                 {cart.items.map((item) => (
                                     <TableRow key={item.productId}>
                                         <TableCell>{item.name}</TableCell>
-                                        <TableCell>
-                                            <div style={{ display: 'flex', alignItems: 'center' }}>
-                                                <IconButton onClick={() => handleUpdateQuantity(item.productId, item.quantity - 1)} size="small">
-                                                    <RemoveIcon />
-                                                </IconButton>
-                                                <TextField
-                                                    value={item.quantity}
+
+                                        {/* **** CÉLULA DE QUANTIDADE MODIFICADA **** */}
+                                        <TableCell align="center">
+                                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <IconButton
                                                     size="small"
-                                                    style={{ width: '50px', textAlign: 'center' }}
-                                                    readOnly
-                                                />
-                                                <IconButton onClick={() => handleUpdateQuantity(item.productId, item.quantity + 1)} size="small">
-                                                    <AddIcon />
+                                                    onClick={() => handleQuantityChange(item.productId, item.quantity - 1)}
+                                                >
+                                                    <RemoveCircleOutlineIcon />
                                                 </IconButton>
-                                            </div>
+                                                <Typography sx={{ mx: 2 }}>{item.quantity}</Typography>
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => handleQuantityChange(item.productId, item.quantity + 1)}
+                                                >
+                                                    <AddCircleOutlineIcon />
+                                                </IconButton>
+                                            </Box>
                                         </TableCell>
+
                                         <TableCell align="right">R$ {Number(item.price).toFixed(2)}</TableCell>
                                         <TableCell align="right">R$ {Number(item.total).toFixed(2)}</TableCell>
-                                        <TableCell align="right">
+                                        <TableCell align="center">
                                             <IconButton onClick={() => handleRemoveItem(item.productId)} color="error">
                                                 <DeleteIcon />
                                             </IconButton>
@@ -139,6 +115,7 @@ function CartPage({ showSnackbar }) {
                         color="success"
                         sx={{ mt: 2 }}
                         onClick={handleCheckout}
+                        disabled={!cart.items.length}
                     >
                         Finalizar Compra
                     </Button>

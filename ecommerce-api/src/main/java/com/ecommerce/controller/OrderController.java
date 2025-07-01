@@ -1,19 +1,19 @@
 package com.ecommerce.controller;
 
-import com.ecommerce.entity.Customer;
-import com.ecommerce.entity.Order;
-import com.ecommerce.repository.CustomerRepository;
-import com.ecommerce.repository.OrderRepository;
 import com.ecommerce.dto.OrderDTO;
+import com.ecommerce.entity.Order;
+import com.ecommerce.entity.User;
+import com.ecommerce.repository.OrderRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import com.ecommerce.entity.User;
+import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -23,8 +23,17 @@ public class OrderController {
     @Autowired
     private OrderRepository orderRepository;
 
-    @Autowired
-    private CustomerRepository customerRepository;
+    private OrderDTO convertToDTO(Order order) {
+        OrderDTO orderDTO = new OrderDTO();
+        orderDTO.setId(order.getId());
+        orderDTO.setOrderDate(order.getOrderDate());
+        orderDTO.setStatus(order.getStatus());
+        orderDTO.setTotal(order.getTotal());
+        if (order.getUser() != null) {
+            orderDTO.setCustomerId(order.getUser().getId());
+        }
+        return orderDTO;
+    }
 
     @GetMapping
     public List<OrderDTO> listAll() {
@@ -33,63 +42,47 @@ public class OrderController {
                 .collect(Collectors.toList());
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<OrderDTO> findById(@PathVariable Long id) {
+        return orderRepository.findById(id)
+                .map(order -> ResponseEntity.ok(convertToDTO(order)))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/my-orders")
-    public List<OrderDTO> getMyOrders() {
+    public ResponseEntity<List<OrderDTO>> getMyOrders() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof User)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         User user = (User) authentication.getPrincipal();
 
-        return orderRepository.findByCustomerId(user.getId()).stream()
+        List<OrderDTO> userOrders = orderRepository.findByUserId(user.getId()).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
-    }
-
-    @GetMapping("/{id}")
-    public OrderDTO findById(@PathVariable Long id) {
-        Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Pedido não encontrado"));
-        return convertToDTO(order);
-    }
-
-    @PostMapping
-    public OrderDTO create(@Valid @RequestBody OrderDTO dto) {
-        Order order = new Order();
-        order.setOrderDate(LocalDateTime.now());
-        order.setStatus(dto.getStatus());
-        order.setTotal(dto.getTotal());
-
-        if (dto.getCustomerId() != null) {
-            Customer customer = customerRepository.findById(dto.getCustomerId())
-                    .orElseThrow(() -> new RuntimeException("Cliente não encontrado"));
-            order.setCustomer(customer);
-        }
-
-        Order saved = orderRepository.save(order);
-        return convertToDTO(saved);
+        return ResponseEntity.ok(userOrders);
     }
 
     @PutMapping("/{id}")
-    public OrderDTO update(@PathVariable Long id, @Valid @RequestBody OrderDTO dto) {
-        Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Pedido não encontrado"));
+    public ResponseEntity<OrderDTO> update(@PathVariable Long id, @Valid @RequestBody OrderDTO orderDTO) {
+        Optional<Order> orderOptional = orderRepository.findById(id);
+        if (orderOptional.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
 
-        order.setStatus(dto.getStatus());
-        order.setTotal(dto.getTotal());
-        Order saved = orderRepository.save(order);
-        return convertToDTO(saved);
+        Order existingOrder = orderOptional.get();
+        existingOrder.setStatus(orderDTO.getStatus());
+        // Outros campos que podem ser atualizados
+        Order updatedOrder = orderRepository.save(existingOrder);
+        return ResponseEntity.ok(convertToDTO(updatedOrder));
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        if (!orderRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
         orderRepository.deleteById(id);
-    }
-
-    private OrderDTO convertToDTO(Order order) {
-        OrderDTO dto = new OrderDTO();
-        dto.setId(order.getId());
-        dto.setOrderDate(order.getOrderDate());
-        dto.setTotal(order.getTotal());
-        dto.setStatus(order.getStatus());
-        dto.setCustomerId(order.getCustomer() != null ? order.getCustomer().getId() : null);
-        return dto;
+        return ResponseEntity.noContent().build();
     }
 }

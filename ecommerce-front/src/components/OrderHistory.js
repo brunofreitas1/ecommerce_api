@@ -8,7 +8,8 @@ import {
     TableContainer,
     TableHead,
     TableRow,
-    CircularProgress
+    CircularProgress,
+    Box
 } from '@mui/material';
 import api from '../api';
 
@@ -23,7 +24,7 @@ function OrderHistory({ showSnackbar }) {
                 setOrders(response.data);
             } catch (error) {
                 console.error("Erro ao buscar histórico de pedidos:", error);
-                showSnackbar('Erro ao buscar histórico de pedidos.', 'error');
+                showSnackbar('Erro ao buscar seu histórico. Você está logado?', 'error');
             } finally {
                 setLoading(false);
             }
@@ -33,12 +34,12 @@ function OrderHistory({ showSnackbar }) {
     }, [showSnackbar]);
 
     if (loading) {
-        return <CircularProgress />;
+        return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>;
     }
 
     return (
         <>
-            <Typography variant="h4" gutterBottom sx={{ mt: 4 }}>
+            <Typography variant="h4" gutterBottom sx={{ mt: 4, mb: 2 }}>
                 Meus Pedidos
             </Typography>
 
@@ -56,7 +57,7 @@ function OrderHistory({ showSnackbar }) {
                         <TableBody>
                             {orders.map((order) => (
                                 <TableRow key={order.id}>
-                                    <TableCell>{order.id}</TableCell>
+                                    <TableCell>#{order.id}</TableCell>
                                     <TableCell>{new Date(order.orderDate).toLocaleDateString()}</TableCell>
                                     <TableCell>{order.status}</TableCell>
                                     <TableCell align="right">R$ {Number(order.total).toFixed(2)}</TableCell>

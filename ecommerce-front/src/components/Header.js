@@ -1,15 +1,19 @@
-// src/components/Header.js
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AppBar, Toolbar, Typography, Button, IconButton, Badge } from '@mui/material';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import { jwtDecode } from 'jwt-decode';
+import { useCart } from '../context/CartContext'; // A importação agora é válida!
 
 function Header({ isAuthenticated, onLogout }) {
+    const { cart } = useCart(); // Hook para acessar os dados do carrinho
+    const navigate = useNavigate();
     const [userRole, setUserRole] = useState(null);
 
+    // Calcula a quantidade de itens no carrinho
+    const cartItemCount = cart.items.reduce((acc, item) => acc + item.quantity, 0);
+
     useEffect(() => {
-        // Este efeito será executado sempre que o status de autenticação mudar.
         if (isAuthenticated) {
             const token = localStorage.getItem('token');
             if (token) {
@@ -24,7 +28,12 @@ function Header({ isAuthenticated, onLogout }) {
         } else {
             setUserRole(null);
         }
-    }, [isAuthenticated]); // A dependência é o status de autenticação
+    }, [isAuthenticated]);
+
+    const handleLogoutClick = () => {
+        onLogout();
+        navigate('/login');
+    };
 
     return (
         <AppBar position="static">
@@ -34,12 +43,11 @@ function Header({ isAuthenticated, onLogout }) {
                 </Typography>
 
                 <IconButton component={Link} to="/cart" color="inherit">
-                    <Badge color="secondary">
+                    <Badge badgeContent={cartItemCount} color="error">
                         <ShoppingCartIcon />
                     </Badge>
                 </IconButton>
 
-                {/* Renderização condicional do botão de Admin */}
                 {isAuthenticated && userRole === 'ADMIN' && (
                     <>
                         <Button color="inherit" component={Link} to="/admin/products">
@@ -56,7 +64,7 @@ function Header({ isAuthenticated, onLogout }) {
                         <Button color="inherit" component={Link} to="/order-history">
                             Meus Pedidos
                         </Button>
-                        <Button color="inherit" onClick={onLogout}>Logout</Button>
+                        <Button color="inherit" onClick={handleLogoutClick}>Logout</Button>
                     </>
                 ) : (
                     <>

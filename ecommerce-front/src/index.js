@@ -3,12 +3,16 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import { CartProvider } from './context/CartContext'; // 1. IMPORTE O PROVIDER
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+    <React.StrictMode>
+        {/* 2. ENVOLVA O APP COM O CARTPROVIDER */}
+        <CartProvider>
+            <App />
+        </CartProvider>
+    </React.StrictMode>
 );
 
 // If you want to start measuring performance in your app, pass a function
