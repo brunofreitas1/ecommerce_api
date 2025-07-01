@@ -2,13 +2,24 @@ package com.ecommerce.entity;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
+@Table(name = "order_item")
 public class OrderItem {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @JsonBackReference
     @ManyToOne
     @JoinColumn(name = "order_id")
     private Order order;
@@ -24,6 +35,7 @@ public class OrderItem {
     @jakarta.validation.constraints.NotNull
     @jakarta.validation.constraints.Positive
     private BigDecimal unitPrice;
+
 
     // Getters e Setters
     public Long getId() { return id; }

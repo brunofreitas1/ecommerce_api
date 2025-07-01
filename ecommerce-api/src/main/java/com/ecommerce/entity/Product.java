@@ -1,31 +1,42 @@
 package com.ecommerce.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
-import java.math.BigDecimal;
-import com.ecommerce.entity.Category;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode; // Importe esta anotação
+import org.hibernate.type.SqlTypes; // E esta também
 
+import java.math.BigDecimal;
+
+@Getter
+@Setter
+@NoArgsConstructor
 @Entity
+@Table(name = "product")
 public class Product {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @jakarta.validation.constraints.NotBlank
     private String name;
-
     private String description;
-
-    @jakarta.validation.constraints.NotNull
-    @jakarta.validation.constraints.Positive
     private BigDecimal price;
-
-    @jakarta.validation.constraints.NotNull
-    @jakarta.validation.constraints.Min(0)
     private Integer stock;
 
+    // --- AQUI ESTÁ A CORREÇÃO PRINCIPAL ---
     @Lob
-    @Column(name = "image_data")
+    // Esta anotação resolve a ambiguidade do null,
+    // dizendo explicitamente ao Hibernate para tratar o campo como binário.
+    @JdbcTypeCode(SqlTypes.BINARY)
     private byte[] imageData;
+
+    @JsonBackReference
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category category;
 
     // Getters e Setters
 
@@ -53,11 +64,8 @@ public class Product {
 
     public void setImageData(byte[] imageData) { this.imageData = imageData; }
 
-    @ManyToOne
-    @JoinColumn(name = "category_id")
-    private Category category;
-
     public Category getCategory() { return category; }
+
     public void setCategory(Category category) { this.category = category; }
 }
 
